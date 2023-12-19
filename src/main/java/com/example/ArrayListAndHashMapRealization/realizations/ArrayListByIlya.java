@@ -13,7 +13,7 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
     private int size;
 
     public ArrayListByIlya() {
-        this.array = new Object[10];
+        this.array = new Object[defaultSize];
         this.size = 0;
     }
 
@@ -33,23 +33,38 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
 
     @Override
     public boolean add(E item){
-        if(size == array.length){
-            Object[] ourNewArray = new Object[array.length + 10];
-            for(int i = 0; i < size; i++){
-                ourNewArray[i] = array[i];
-            }
-            ourNewArray[size] = item;
-            this.array = ourNewArray;
-            size++;
-            return true;
+        try {
+            add(size, item);
         }
-        else if(size < array.length){
-            array[size] = item;
-            size++;
-            return true;
-        }
-        else{
+        catch (Exception e){
+            e.printStackTrace();
             return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void add(int index, E item){
+        if(index > size){
+            throw new IllegalArgumentException("Index of new element can not be greater then size of ArrayList!");
+        }
+
+        checkLengthOfArray();
+        for(int i = size; i > index; i--){
+            array[i] = array[i - 1];
+        }
+        array[index] = item;
+        size++;
+    }
+
+    private void checkLengthOfArray(){
+        if(size == array.length){
+            Object[] ourNewArray = new Object[array.length + defaultSize];
+            System.arraycopy(array, 0, ourNewArray, 0, size);
+            array = ourNewArray;
+        }
+        else if(size > array.length){
+            throw new RuntimeException("Something goes wrong wrong with ArrayList");
         }
     }
 
@@ -60,7 +75,19 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
     @Override
     public boolean remove(Object item){
         int removeIndex = indexOf(item);
-        
+        remove(removeIndex);
+        return true;
+    }
+
+    @Override
+    public E remove(int index){
+        E removedElement = (E) array[index];
+        for(int i = index; i < size - 1; i++){
+            array[i] = array[i + 1];
+        }
+        size--;
+        System.arraycopy(array, 0, array, 0, size);
+        return removedElement;
     }
 
     @Override
@@ -84,4 +111,10 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
             return resultIndex;
         }
     }
+
+    public void clear(){
+        array = new Object[defaultSize];
+        size = 0;
+    }
+
 }
