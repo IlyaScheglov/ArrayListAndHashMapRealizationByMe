@@ -2,7 +2,10 @@ package com.example.ArrayListAndHashMapRealization.realizations;
 
 import java.io.Serializable;
 import java.util.AbstractList;
+import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Serializable {
 
@@ -48,8 +51,9 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
         if(index > size){
             throw new IllegalArgumentException("Index of new element can not be greater then size of ArrayList!");
         }
-
-        checkLengthOfArray();
+        if(size + 1 > array.length){
+            checkLengthOfArray(1);
+        }
         for(int i = size; i > index; i--){
             array[i] = array[i - 1];
         }
@@ -57,30 +61,60 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
         size++;
     }
 
-    private void checkLengthOfArray(){
-        if(size == array.length){
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+        return addAll(size, c);
+    }
+
+    @Override
+    public boolean addAll(int index, Collection<? extends E> c) {
+        int cSize = c.size();
+        if(index > size){
+            throw new IllegalArgumentException("Index of new element can not be greater then size of ArrayList!");
+        }
+
+        int arrLengthNow = array.length;
+        int arrLengthNeed = size + cSize;
+        while(arrLengthNow < arrLengthNeed){
+            checkLengthOfArray(cSize);
+            arrLengthNow = array.length;
+        }
+
+        for(int i = size - 1; i >= index; i--){
+            array[i + cSize] = array[i];
+        }
+        AtomicInteger localIndex = new AtomicInteger(index);
+        c.forEach(col -> {
+            array[localIndex.get()] = col;
+            localIndex.getAndIncrement();
+            localIndex.getAndIncrement();
+        });
+        return true;
+    }
+
+    private void checkLengthOfArray(int countAddingElements){
             Object[] ourNewArray = new Object[array.length + defaultSize];
             System.arraycopy(array, 0, ourNewArray, 0, size);
             array = ourNewArray;
-        }
-        else if(size > array.length){
-            throw new RuntimeException("Something goes wrong wrong with ArrayList");
-        }
     }
 
-    public boolean isEmpty(){
+    @Override
+    public boolean isEmpty() {
         return size == 0;
     }
 
     @Override
     public boolean remove(Object item){
         int removeIndex = indexOf(item);
+        if(removeIndex == -1){
+            throw new NoSuchElementException("Element not found!");
+        }
         remove(removeIndex);
         return true;
     }
 
     @Override
-    public E remove(int index){
+    public E remove(int index) throws ArrayIndexOutOfBoundsException{
         E removedElement = (E) array[index];
         for(int i = index; i < size - 1; i++){
             array[i] = array[i + 1];
@@ -88,6 +122,42 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
         size--;
         System.arraycopy(array, 0, array, 0, size);
         return removedElement;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        boolean collectionIsInArray = false;
+        int indexOfBeginningCollection = 0;
+        int indexOfEndingCollection = 0;
+        for(int i = 0; i < size; i++){
+            if(array[i].equals(c.toArray()[0]) && size >= i + c.size()){
+                boolean check = true;
+                int j;
+                for( j = 0 ; j < c.size(); j++){
+                    if(!c.toArray()[j].equals(array[i + j])){
+                        check = false;
+                        break;
+                    }
+                }
+                if(check == true){
+                    collectionIsInArray = check;
+                    indexOfBeginningCollection = i;
+                    indexOfEndingCollection = j;
+                    break;
+                }
+            }
+        }
+
+        if(collectionIsInArray == false){
+            throw new NoSuchElementException("Collection not found!");
+        }
+
+        for(int k = indexOfEndingCollection; k < size - 1; k++){
+            array[k - c.size()] = array[k];
+        }
+        size -= c.size();
+        System.arraycopy(array, 0, array, 0, size);
+        return true;
     }
 
     @Override
@@ -100,21 +170,20 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
                 resultIndex = i;
             }
         }
-        if(resultIndex == -1){
-            try {
-                throw new Exception("Element not found!");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        else{
-            return resultIndex;
-        }
+        return resultIndex;
     }
 
     public void clear(){
         array = new Object[defaultSize];
         size = 0;
+    }
+
+    public E[] toArray(){
+        Object[] listInArrayForm = new Object[size];
+        for(int i = 0; i < size; i++){
+            listInArrayForm[i] = array[i];
+        }
+        return (E[]) listInArrayForm;
     }
 
 }
