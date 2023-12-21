@@ -5,8 +5,6 @@ import com.example.ArrayListAndHashMapRealization.obj.KeyAndValueObject;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>, Serializable {
 
@@ -49,6 +47,11 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
     }
 
     @Override
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    @Override
     public V get(Object key) {
         var ref = new Object() {
             V value = null;
@@ -67,59 +70,140 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
         return ref.value;
     }
 
-    //I should edit down code!!!
     @Override
-    public V getOrDefault(Object key, V defaultValue) {
-        return super.getOrDefault(key, defaultValue);
+    public boolean containsKey(Object key) {
+        long keyHash = key.hashCode();
+        int indexInArray = (int) keyHash % defaultLengthOfMapArray;
+        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+        AtomicBoolean thereAreThisKey = new AtomicBoolean(false);
+
+        checkList.forEach(cl -> {
+            if(cl.getKey().hashCode() == keyHash){
+                if(cl.getKey().equals(key)){
+                    thereAreThisKey.lazySet(true);
+                }
+            }
+        });
+        return thereAreThisKey.get();
     }
 
     @Override
-    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-        super.replaceAll(function);
+    public void clear() {
+        array = new LinkedList[defaultLengthOfMapArray];
+        size = 0;
+        for(int i = 0; i < defaultLengthOfMapArray; i++){
+            array[i] = new LinkedList<>();
+        }
+    }
+
+    @Override
+    public Collection<V> values() {
+        LinkedList<V> result = new LinkedList<>();
+
+        for(int i = 0; i < defaultLengthOfMapArray; i++){
+            LinkedList<KeyAndValueObject<K, V>> checkList = array[i];
+            checkList.forEach(cl -> result.add(cl.getValue()));
+        }
+        return result;
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+        Set<? extends Entry<? extends K, ? extends V>> entrySet = m.entrySet();
+        entrySet.forEach(es -> put(es.getKey(), es.getValue()));
     }
 
     @Override
     public V putIfAbsent(K key, V value) {
-        return super.putIfAbsent(key, value);
+        long keyHash = key.hashCode();
+        int indexInArray = (int) keyHash % 16;
+        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+        AtomicBoolean thisElementIsPresent = new AtomicBoolean(false);
+
+        checkList.forEach(cl -> {
+            if(cl.getKey().hashCode() == keyHash){
+                if(cl.getKey().equals(key)){
+                    thisElementIsPresent.lazySet(true);
+                }
+            }
+        });
+        if(thisElementIsPresent.get() == true){
+            return value;
+        }
+        else{
+            checkList.add(new KeyAndValueObject<>(key, value));
+            size++;
+            return value;
+        }
+    }
+
+    @Override
+    public V remove(Object key) {
+        Object[] valueToReturn = new Object[1];
+        long keyHash = key.hashCode();
+        int indexInArray = (int) keyHash % 16;
+        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+
+        checkList.forEach(cl -> {
+            if(cl.getKey().hashCode() == keyHash){
+                if(cl.getKey().equals(key)){
+                    valueToReturn[0] = cl.getValue();
+                    checkList.remove(cl);
+                    size--;
+                }
+            }
+        });
+        return (V) valueToReturn[0];
     }
 
     @Override
     public boolean remove(Object key, Object value) {
-        return super.remove(key, value);
+        AtomicBoolean result = new AtomicBoolean(false);
+        long keyHash = key.hashCode();
+        int indexInArray = (int) keyHash % 16;
+        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+
+        checkList.forEach(cl -> {
+            if(cl.getKey().hashCode() == keyHash){
+                if(cl.getKey().equals(key) && cl.getValue().equals(value)){
+                    checkList.remove(cl);
+                    size--;
+                    result.lazySet(true);
+                }
+            }
+        });
+        return result.get();
     }
 
     @Override
-    public boolean replace(K key, V oldValue, V newValue) {
-        return super.replace(key, oldValue, newValue);
+    public String toString() {
+        StringJoiner joiner = new StringJoiner("\n");
+        for(int i = 0; i < defaultLengthOfMapArray; i++){
+            LinkedList<KeyAndValueObject<K, V>> checkList = array[i];
+            checkList.forEach(cl -> joiner.add("[" + String.valueOf(cl.getKey()) +
+                    ", " + String.valueOf(cl.getValue()) + "]"));
+        }
+        return joiner.toString();
     }
 
     @Override
-    public V replace(K key, V value) {
-        return super.replace(key, value);
-    }
+    public Set<K> keySet() {
+        Set<K> result = new HashSet<>();
 
-    @Override
-    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-        return super.computeIfAbsent(key, mappingFunction);
-    }
-
-    @Override
-    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return super.computeIfPresent(key, remappingFunction);
-    }
-
-    @Override
-    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return super.compute(key, remappingFunction);
-    }
-
-    @Override
-    public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        return super.merge(key, value, remappingFunction);
+        for(int i = 0; i < defaultLengthOfMapArray; i++){
+            LinkedList<KeyAndValueObject<K, V>> checkList = array[i];
+            checkList.forEach(cl -> result.add(cl.getKey()));
+        }
+        return result;
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return null;
+        Set<Entry<K, V>> result = new HashSet<>();
+        for(int i = 0; i < defaultLengthOfMapArray; i++){
+            LinkedList<KeyAndValueObject<K, V>> checkList = array[i];
+            checkList.forEach(cl -> result.add((Entry<K, V>) cl));
+        }
+        return result;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.ArrayListAndHashMapRealization;
 
+import com.example.ArrayListAndHashMapRealization.obj.KeyAndValueObject;
 import com.example.ArrayListAndHashMapRealization.realizations.ArrayListByIlya;
 import com.example.ArrayListAndHashMapRealization.realizations.HashMapByIlya;
 
@@ -9,8 +10,7 @@ public class Main {
 
     public static void main(String args[]){
         Map<String, String> mapa = new HashMapByIlya<>();
-        mapa.put("2", "deb");
-        mapa.put("1", "bebra");
-        System.out.println(mapa.get("2"));
+        mapa.putIfAbsent("1", "veev");
+        System.out.println(mapa.remove("1", "veev"));
     }
 }

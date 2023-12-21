@@ -1,10 +1,7 @@
 package com.example.ArrayListAndHashMapRealization.realizations;
 
 import java.io.Serializable;
-import java.util.AbstractList;
-import java.util.Collection;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Serializable {
@@ -186,4 +183,12 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
         return (E[]) listInArrayForm;
     }
 
+    @Override
+    public String toString() {
+        StringJoiner joiner = new StringJoiner("\n");
+        for(int i = 0; i < size; i++){
+            joiner.add(String.valueOf(array[i]));
+        }
+        return joiner.toString();
+    }
 }

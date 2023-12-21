@@ -1,8 +1,9 @@
 package com.example.ArrayListAndHashMapRealization.obj;
 
 import java.io.Serializable;
+import java.util.Map;
 
-public class KeyAndValueObject<K, V> implements Serializable {
+public class KeyAndValueObject<K, V> implements Serializable, Map.Entry<K, V> {
 
     private K key;
 
@@ -13,19 +14,24 @@ public class KeyAndValueObject<K, V> implements Serializable {
         this.value = value;
     }
 
+    @Override
     public K getKey() {
         return key;
     }
 
+    @Override
     public V getValue() {
         return value;
     }
 
-    public void setKey(K key) {
+    public K setKey(K key) {
         this.key = key;
+        return key;
     }
 
-    public void setValue(V value) {
+    @Override
+    public V setValue(V value) {
         this.value = value;
+        return value;
     }
 }
