@@ -25,12 +25,10 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
     @Override
     public V put(K key, V value) {
         KeyAndValueObject newObj = new KeyAndValueObject(key, value);
-        long keyHash = newObj.getKey().hashCode();
-        int indexInArray = (int) keyHash % defaultLengthOfMapArray;
-        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+        LinkedList<KeyAndValueObject<K, V>> checkList = getLinkedListByKey((K) newObj.getKey());
 
         checkList.forEach(cl -> {
-            if(cl.getKey().hashCode() == keyHash){
+            if(cl.getKey().hashCode() == newObj.getKey().hashCode()){
                 if(cl.getKey().equals(newObj.getKey())){
                     checkList.remove(cl);
                 }
@@ -56,12 +54,10 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
         var ref = new Object() {
             V value = null;
         };
-        long keyHash = key.hashCode();
-        int indexInArray = (int) keyHash % defaultLengthOfMapArray;
-        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+        LinkedList<KeyAndValueObject<K, V>> checkList = getLinkedListByKey((K) key);
 
         checkList.forEach(cl -> {
-            if(cl.getKey().hashCode() == keyHash){
+            if(cl.getKey().hashCode() == key.hashCode()){
                 if(cl.getKey().equals(key)){
                     ref.value = cl.getValue();
                 }
@@ -72,13 +68,11 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
 
     @Override
     public boolean containsKey(Object key) {
-        long keyHash = key.hashCode();
-        int indexInArray = (int) keyHash % defaultLengthOfMapArray;
-        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+        LinkedList<KeyAndValueObject<K, V>> checkList = getLinkedListByKey((K) key);
         AtomicBoolean thereAreThisKey = new AtomicBoolean(false);
 
         checkList.forEach(cl -> {
-            if(cl.getKey().hashCode() == keyHash){
+            if(cl.getKey().hashCode() == key.hashCode()){
                 if(cl.getKey().equals(key)){
                     thereAreThisKey.lazySet(true);
                 }
@@ -115,13 +109,12 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
 
     @Override
     public V putIfAbsent(K key, V value) {
-        long keyHash = key.hashCode();
-        int indexInArray = (int) keyHash % 16;
-        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+        KeyAndValueObject<K, V> newObj = new KeyAndValueObject<>(key, value);
+        LinkedList<KeyAndValueObject<K, V>> checkList = getLinkedListByKey(newObj.getKey());
         AtomicBoolean thisElementIsPresent = new AtomicBoolean(false);
 
         checkList.forEach(cl -> {
-            if(cl.getKey().hashCode() == keyHash){
+            if(cl.getKey().hashCode() == newObj.getKey().hashCode()){
                 if(cl.getKey().equals(key)){
                     thisElementIsPresent.lazySet(true);
                 }
@@ -131,7 +124,7 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
             return value;
         }
         else{
-            checkList.add(new KeyAndValueObject<>(key, value));
+            checkList.add(newObj);
             size++;
             return value;
         }
@@ -140,12 +133,10 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
     @Override
     public V remove(Object key) {
         Object[] valueToReturn = new Object[1];
-        long keyHash = key.hashCode();
-        int indexInArray = (int) keyHash % 16;
-        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+        LinkedList<KeyAndValueObject<K, V>> checkList = getLinkedListByKey((K) key);
 
         checkList.forEach(cl -> {
-            if(cl.getKey().hashCode() == keyHash){
+            if(cl.getKey().hashCode() == key.hashCode()){
                 if(cl.getKey().equals(key)){
                     valueToReturn[0] = cl.getValue();
                     checkList.remove(cl);
@@ -159,12 +150,10 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
     @Override
     public boolean remove(Object key, Object value) {
         AtomicBoolean result = new AtomicBoolean(false);
-        long keyHash = key.hashCode();
-        int indexInArray = (int) keyHash % 16;
-        LinkedList<KeyAndValueObject<K, V>> checkList = array[indexInArray];
+        LinkedList<KeyAndValueObject<K, V>> checkList = getLinkedListByKey((K) key);
 
         checkList.forEach(cl -> {
-            if(cl.getKey().hashCode() == keyHash){
+            if(cl.getKey().hashCode() == key.hashCode()){
                 if(cl.getKey().equals(key) && cl.getValue().equals(value)){
                     checkList.remove(cl);
                     size--;
@@ -205,5 +194,11 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
             checkList.forEach(cl -> result.add((Entry<K, V>) cl));
         }
         return result;
+    }
+
+    private LinkedList<KeyAndValueObject<K, V>> getLinkedListByKey(K key){
+        long keyHash = key.hashCode();
+        int indexInArray = (int) keyHash % defaultLengthOfMapArray;
+        return array[indexInArray];
     }
 }

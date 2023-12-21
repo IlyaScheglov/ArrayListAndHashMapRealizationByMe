@@ -84,8 +84,8 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
         c.forEach(col -> {
             array[localIndex.get()] = col;
             localIndex.getAndIncrement();
-            localIndex.getAndIncrement();
         });
+        size += cSize;
         return true;
     }
 
@@ -111,7 +111,10 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
     }
 
     @Override
-    public E remove(int index) throws ArrayIndexOutOfBoundsException{
+    public E remove(int index){
+        if(size == array.length) System.arraycopy(array, 0, array, 0, size + 1);
+        if(index < 0 || index > size - 1) throw new NoSuchElementException("Element not found!");
+
         E removedElement = (E) array[index];
         for(int i = index; i < size - 1; i++){
             array[i] = array[i + 1];
@@ -170,6 +173,7 @@ public class ArrayListByIlya <E> extends AbstractList<E> implements List<E>, Ser
         return resultIndex;
     }
 
+    @Override
     public void clear(){
         array = new Object[defaultSize];
         size = 0;
