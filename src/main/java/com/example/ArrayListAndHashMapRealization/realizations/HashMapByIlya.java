@@ -26,16 +26,20 @@ public class HashMapByIlya<K, V> extends AbstractMap<K, V> implements Map<K, V>,
     public V put(K key, V value) {
         KeyAndValueObject newObj = new KeyAndValueObject(key, value);
         LinkedList<KeyAndValueObject<K, V>> checkList = getLinkedListByKey((K) newObj.getKey());
+        AtomicBoolean thereAreSameKey = new AtomicBoolean(false);
 
         checkList.forEach(cl -> {
             if(cl.getKey().hashCode() == newObj.getKey().hashCode()){
                 if(cl.getKey().equals(newObj.getKey())){
                     checkList.remove(cl);
+                    thereAreSameKey.lazySet(true);
                 }
             }
         });
         checkList.add(newObj);
-        size++;
+        if(thereAreSameKey.get() == false){
+            size++;
+        }
         return (V) newObj.getValue();
     }
 
